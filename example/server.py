@@ -164,27 +164,3 @@ class RequestHandler(BaseHTTPRequestHandler):
         # protected resources
         if self.path.startswith(RESOURCE_URL):
             try:
-                # verify the request has been oauth authorized
-                consumer, token, params = self.oauth_server.verify_request(oauth_request)
-                # send okay response
-                self.send_response(200, 'OK')
-                self.end_headers()
-                # return the extra parameters - just for something to return
-                self.wfile.write(str(params))
-            except oauth.OAuthError, err:
-                self.send_oauth_error(err)
-            return
-
-    def do_POST(self):
-        return self.do_GET()
-
-def main():
-    try:
-        server = HTTPServer(('', 8080), RequestHandler)
-        print 'Test server running...'
-        server.serve_forever()
-    except KeyboardInterrupt:
-        server.socket.close()
-
-if __name__ == '__main__':
-    main()

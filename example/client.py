@@ -133,26 +133,3 @@ def run_example():
     print 'GOT'
     print 'key: %s' % str(token.key)
     print 'secret: %s' % str(token.secret)
-    pause()
-
-    # access some protected resources
-    print '* Access protected resources ...'
-    pause()
-    parameters = {'file': 'vacation.jpg', 'size': 'original', 'oauth_callback': CALLBACK_URL} # resource specific params
-    oauth_request = oauth.OAuthRequest.from_consumer_and_token(consumer, token=token, http_method='POST', http_url=RESOURCE_URL, parameters=parameters)
-    oauth_request.sign_request(signature_method_hmac_sha1, consumer, token)
-    print 'REQUEST (via post body)'
-    print 'parameters: %s' % str(oauth_request.parameters)
-    pause()
-    params = client.access_resource(oauth_request)
-    print 'GOT'
-    print 'non-oauth parameters: %s' % params
-    pause()
-
-def pause():
-    print ''
-    time.sleep(1)
-
-if __name__ == '__main__':
-    run_example()
-    print 'Done.'
