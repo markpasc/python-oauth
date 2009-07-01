@@ -90,32 +90,59 @@ class OAuthConsumer(object):
 
 class OAuthToken(object):
 
-    """OAuthToken is a data type that represents an End User via either an access
-    or request token.
+    """An OAuth credential used to request authorization or a protected
+    resource.
 
-    key -- the token
-    secret -- the token secret
+    Tokens in OAuth comprise a *key* and a *secret*. The key is included in
+    requests to identify the token being used, but the secret is used only in
+    the signature, to prove that the requester is who the server gave the
+    token to.
+
+    When first negotiating the authorization, the consumer asks for a *request
+    token* that the live user authorizes with the service provider. The
+    consumer then exchanges the request token for an *access token* that can
+    be used to access protected resources.
 
     """
 
-    key = None
-    secret = None
-
     def __init__(self, key, secret):
+        if key is None:
+            raise ValueError("A token's key must not be None")
+        if secret is None:
+            raise ValueError("A token's secret must not be None")
+
         self.key = key
         self.secret = secret
 
     def to_string(self):
+        """Returns this token as a plain string, suitable for storage.
+
+        The resulting string includes the token's secret, so you should never
+        send or store this string where a third party can read it.
+
+        """
         return urllib.urlencode({'oauth_token': self.key,
             'oauth_token_secret': self.secret})
 
     def from_string(s):
-        """ Returns a token from something like:
-        oauth_token_secret=xxx&oauth_token=xxx
-        """
+        """Deserializes a token from a string like one returned by
+        `to_string()`."""
         params = cgi.parse_qs(s, keep_blank_values=False)
-        key = params['oauth_token'][0]
-        secret = params['oauth_token_secret'][0]
+
+        try:
+            (key,) = params['oauth_token']
+        except KeyError:
+            raise ValueError("Can't make a token from string %r as it contains no key" % s)
+        except ValueError:
+            raise ValueError("Can't make a token from string %r as it contains more than one key" % s)
+
+        try:
+            (secret,) = params['oauth_token_secret']
+        except KeyError:
+            raise ValueError("Can't make a token from string %r as it contains no secret" % s)
+        except ValueError:
+            raise ValueError("Can't make a token from string %r as it contains more than one secret" % s)
+
         return OAuthToken(key, secret)
     from_string = staticmethod(from_string)
 

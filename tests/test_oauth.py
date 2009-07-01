@@ -14,34 +14,16 @@ class ConsumerTests(unittest.TestCase):
 class TokenTests(unittest.TestCase):
 
     def test_from_string(self):
-        tok = oauth.oauth.OAuthToken.from_string('')
-        self.assert_(tok.key is None)
-        self.assert_(tok.secret is None)
-        tok = oauth.oauth.OAuthToken.from_string('blahblahblah')
-        self.assert_(tok.key is None)
-        self.assert_(tok.secret is None)
-        tok = oauth.oauth.OAuthToken.from_string('blah=blah')
-        self.assert_(tok.key is None)
-        self.assert_(tok.secret is None)
+        self.assertRaises(ValueError, lambda: oauth.oauth.OAuthToken.from_string(''))
+        self.assertRaises(ValueError, lambda: oauth.oauth.OAuthToken.from_string('blahblahblah'))
+        self.assertRaises(ValueError, lambda: oauth.oauth.OAuthToken.from_string('blah=blah'))
 
-        tok = oauth.oauth.OAuthToken.from_string('oauth_token_secret=asfdasf')
-        self.assertEqual(tok.secret, 'asfdasf')
-        self.assert_(tok.key is None)
-        tok = oauth.oauth.OAuthToken.from_string('oauth_token_secret=')
-        self.assertEqual(tok.secret, '')
-        self.assert_(tok.key is None)
-        tok = oauth.oauth.OAuthToken.from_string('oauth_token=asfdasf')
-        self.assertEqual(tok.key, 'asfdasf')
-        self.assert_(tok.secret is None)
-        tok = oauth.oauth.OAuthToken.from_string('oauth_token=')
-        self.assertEqual(tok.key, '')
-        self.assert_(tok.secret is None)
-        tok = oauth.oauth.OAuthToken.from_string('oauth_token=&oauth_token_secret=')
-        self.assertEqual(tok.key, '')
-        self.assertEqual(tok.secret, '')
-        tok = oauth.oauth.OAuthToken.from_string('oauth_token=tooken%26oauth_token_secret=seecret')
-        self.assertEqual(tok.key, 'tooken&oauth_token_secret=seecret')
-        self.assert_(tok.secret is None)
+        self.assertRaises(ValueError, lambda: oauth.oauth.OAuthToken.from_string('oauth_token_secret=asfdasf'))
+        self.assertRaises(ValueError, lambda: oauth.oauth.OAuthToken.from_string('oauth_token_secret='))
+        self.assertRaises(ValueError, lambda: oauth.oauth.OAuthToken.from_string('oauth_token=asfdasf'))
+        self.assertRaises(ValueError, lambda: oauth.oauth.OAuthToken.from_string('oauth_token='))
+        self.assertRaises(ValueError, lambda: oauth.oauth.OAuthToken.from_string('oauth_token=&oauth_token_secret='))
+        self.assertRaises(ValueError, lambda: oauth.oauth.OAuthToken.from_string('oauth_token=tooken%26oauth_token_secret=seecret'))
 
         tok = oauth.oauth.OAuthToken.from_string('oauth_token_secret=seecret&oauth_token=tooken')
         self.assertEqual(tok.key, 'tooken')
@@ -60,11 +42,8 @@ class TokenTests(unittest.TestCase):
         self.assertEqual(tok.secret, 'seecret')
 
     def test_to_string(self):
-        tok = oauth.oauth.OAuthToken(None, None)
-        self.assertEqual(str(tok), '')
-
         tok = oauth.oauth.OAuthToken('tooken', 'seecret')
-        self.assertEqual(str(tok), 'oauth_token=tooken&oauth_token_secret=seecret')
+        self.assertEqual(str(tok), 'oauth_token_secret=seecret&oauth_token=tooken')
 
 
 class RequestTests(unittest.TestCase):
