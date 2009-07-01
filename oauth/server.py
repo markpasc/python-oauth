@@ -30,7 +30,19 @@ from oauth import *
 
 class Server(object):
 
-    """A worker to check the validity of a request against a data store."""
+    """A skeletal implementation of a service provider, providing protected
+    resources to requests from authorized consumers.
+
+    This class implements the logic to check requests for authorization. You
+    can use it with your web server or web framework to protect certain
+    resources with OAuth.
+
+    As this class has no knowledge of how your application stores data, you
+    have to give it an object it can use to load OAuth objects. Implement a
+    subclass of `oauth.interface.DataStore` for your storage system and supply
+    it to the `Server` instance as `data_store`.
+
+    """
 
     timestamp_threshold = 300 # In seconds, five minutes.
     version = VERSION
@@ -182,7 +194,15 @@ class Server(object):
 
 class DataStore(object):
 
-    """A database abstraction used to lookup consumers and tokens."""
+    """A database abstraction used to lookup consumers and tokens.
+
+    To use your backend store with the `oauth` module, implement a subclass of
+    this class that performs its methods using your database or storage
+    system. Then, when using `oauth.Server`, supply it with an instance of
+    your custom `DataStore` class to have objects stored in natively in your
+    own data store.
+
+    """
 
     def lookup_consumer(self, key):
         """-> OAuthConsumer."""

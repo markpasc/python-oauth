@@ -31,7 +31,14 @@ from oauth import *
 
 class Signer(object):
 
-    """A strategy class that implements a signature method."""
+    """A way of signing requests.
+
+    The OAuth protocol lets consumers and service providers pick a way to sign
+    requests. This interface shows the methods expected by the other `oauth`
+    modules for signing requests. Subclass it and implement its methods to
+    provide a new way to sign requests.
+
+    """
 
     def get_name(self):
         """-> str."""
