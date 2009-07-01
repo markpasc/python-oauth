@@ -28,7 +28,7 @@ import time
 from oauth import *
 
 
-class OAuthServer(object):
+class Server(object):
 
     """A worker to check the validity of a request against a data store."""
 
@@ -180,7 +180,7 @@ class OAuthServer(object):
             raise OAuthError('Nonce already used: %s' % str(nonce))
 
 
-class OAuthDataStore(object):
+class DataStore(object):
 
     """A database abstraction used to lookup consumers and tokens."""
 

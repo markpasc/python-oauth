@@ -29,7 +29,7 @@ import binascii
 from oauth import *
 
 
-class OAuthSignatureMethod(object):
+class Signer(object):
 
     """A strategy class that implements a signature method."""
 
@@ -50,7 +50,7 @@ class OAuthSignatureMethod(object):
         return built == signature
 
 
-class OAuthSignatureMethod_HMAC_SHA1(OAuthSignatureMethod):
+class HmacSha1(Signer):
 
     def get_name(self):
         return 'HMAC-SHA1'
@@ -85,7 +85,7 @@ class OAuthSignatureMethod_HMAC_SHA1(OAuthSignatureMethod):
         return binascii.b2a_base64(hashed.digest())[:-1]
 
 
-class OAuthSignatureMethod_PLAINTEXT(OAuthSignatureMethod):
+class Plaintext(Signer):
 
     def get_name(self):
         return 'PLAINTEXT'

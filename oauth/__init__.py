@@ -74,7 +74,7 @@ def generate_nonce(length=8):
 from oauth.sign import *
 
 
-class OAuthConsumer(object):
+class Consumer(object):
 
     """A consumer of OAuth-protected services.
 
@@ -106,7 +106,7 @@ class OAuthConsumer(object):
         self.secret = secret
 
 
-class OAuthToken(object):
+class Token(object):
 
     """An OAuth credential used to request authorization or a protected
     resource.
@@ -142,7 +142,7 @@ class OAuthToken(object):
         return urllib.urlencode({'oauth_token': self.key,
             'oauth_token_secret': self.secret})
 
-    def from_string(s):
+    def from_string(cls, s):
         """Deserializes a token from a string like one returned by
         `to_string()`."""
         params = cgi.parse_qs(s, keep_blank_values=False)
@@ -161,14 +161,14 @@ class OAuthToken(object):
         except ValueError:
             raise ValueError("Can't make a token from string %r as it contains more than one secret" % s)
 
-        return OAuthToken(key, secret)
-    from_string = staticmethod(from_string)
+        return cls(key, secret)
+    from_string = classmethod(from_string)
 
     def __str__(self):
         return self.to_string()
 
 
-class OAuthRequest(object):
+class Request(object):
 
     """OAuthRequest represents the request and can be serialized.
 
@@ -278,7 +278,7 @@ class OAuthRequest(object):
         """Calls the build signature method within the signature method."""
         return signature_method.build_signature(self, consumer, token)
 
-    def from_request(http_method, http_url, headers=None, parameters=None,
+    def from_request(cls, http_method, http_url, headers=None, parameters=None,
             query_string=None):
         """Combines multiple parameter sources."""
         if parameters is None:
@@ -292,7 +292,7 @@ class OAuthRequest(object):
                 auth_header = auth_header[6:]
                 try:
                     # Get the parameters from the header.
-                    header_params = OAuthRequest._split_header(auth_header)
+                    header_params = cls._split_header(auth_header)
                     parameters.update(header_params)
                 except:
                     raise OAuthError('Unable to parse OAuth parameters from '
@@ -300,21 +300,21 @@ class OAuthRequest(object):
 
         # GET or POST query string.
         if query_string:
-            query_params = OAuthRequest._split_url_string(query_string)
+            query_params = cls._split_url_string(query_string)
             parameters.update(query_params)
 
         # URL parameters.
         param_str = urlparse.urlparse(http_url)[4] # query
-        url_params = OAuthRequest._split_url_string(param_str)
+        url_params = cls._split_url_string(param_str)
         parameters.update(url_params)
 
         if parameters:
-            return OAuthRequest(http_method, http_url, parameters)
+            return cls(http_method, http_url, parameters)
 
         return None
-    from_request = staticmethod(from_request)
+    from_request = classmethod(from_request)
 
-    def from_consumer_and_token(oauth_consumer, token=None,
+    def from_consumer_and_token(cls, oauth_consumer, token=None,
             http_method=HTTP_METHOD, http_url=None, parameters=None):
         if not parameters:
             parameters = {}
@@ -323,7 +323,7 @@ class OAuthRequest(object):
             'oauth_consumer_key': oauth_consumer.key,
             'oauth_timestamp': generate_timestamp(),
             'oauth_nonce': generate_nonce(),
-            'oauth_version': OAuthRequest.version,
+            'oauth_version': cls.version,
         }
 
         defaults.update(parameters)
@@ -333,9 +333,9 @@ class OAuthRequest(object):
             parameters['oauth_token'] = token.key
 
         return OAuthRequest(http_method, http_url, parameters)
-    from_consumer_and_token = staticmethod(from_consumer_and_token)
+    from_consumer_and_token = classmethod(from_consumer_and_token)
 
-    def from_token_and_callback(token, callback=None, http_method=HTTP_METHOD,
+    def from_token_and_callback(cls, token, callback=None, http_method=HTTP_METHOD,
             http_url=None, parameters=None):
         if not parameters:
             parameters = {}
@@ -345,8 +345,8 @@ class OAuthRequest(object):
         if callback:
             parameters['oauth_callback'] = callback
 
-        return OAuthRequest(http_method, http_url, parameters)
-    from_token_and_callback = staticmethod(from_token_and_callback)
+        return cls(http_method, http_url, parameters)
+    from_token_and_callback = classmethod(from_token_and_callback)
 
     def _split_header(header):
         """Turn Authorization: header into parameters."""
@@ -374,7 +374,7 @@ class OAuthRequest(object):
     _split_url_string = staticmethod(_split_url_string)
 
 
-class OAuthClient(object):
+class Client(object):
 
     """OAuthClient is a worker to attempt to execute a request."""
 
