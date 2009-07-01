@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+
 import cgi
 import urllib
 import time
@@ -41,13 +42,16 @@ class OAuthError(RuntimeError):
     def __init__(self, message='OAuth error occured.'):
         self.message = message
 
+
 def build_authenticate_header(realm=''):
     """Optional WWW-Authenticate header (401 error)"""
     return {'WWW-Authenticate': 'OAuth realm="%s"' % realm}
 
+
 def escape(s):
     """Escape a URL including any /."""
     return urllib.quote(s, safe='~')
+
 
 def _utf8_str(s):
     """Convert unicode to utf-8."""
@@ -56,9 +60,11 @@ def _utf8_str(s):
     else:
         return str(s)
 
+
 def generate_timestamp():
     """Get seconds since epoch (UTC)."""
     return int(time.time())
+
 
 def generate_nonce(length=8):
     """Generate pseudorandom number."""
@@ -66,12 +72,14 @@ def generate_nonce(length=8):
 
 
 class OAuthConsumer(object):
+
     """Consumer of OAuth authentication.
 
     OAuthConsumer is a data type that represents the identity of the Consumer
     via its shared secret with the Service Provider.
 
     """
+
     key = None
     secret = None
 
@@ -79,15 +87,17 @@ class OAuthConsumer(object):
         self.key = key
         self.secret = secret
 
-   
+
 class OAuthToken(object):
+
     """OAuthToken is a data type that represents an End User via either an access
     or request token.
-    
+
     key -- the token
     secret -- the token secret
 
     """
+
     key = None
     secret = None
 
@@ -98,7 +108,7 @@ class OAuthToken(object):
     def to_string(self):
         return urllib.urlencode({'oauth_token': self.key,
             'oauth_token_secret': self.secret})
- 
+
     def from_string(s):
         """ Returns a token from something like:
         oauth_token_secret=xxx&oauth_token=xxx
@@ -114,18 +124,20 @@ class OAuthToken(object):
 
 
 class OAuthRequest(object):
+
     """OAuthRequest represents the request and can be serialized.
 
     OAuth parameters:
-        - oauth_consumer_key 
+        - oauth_consumer_key
         - oauth_token
         - oauth_signature_method
-        - oauth_signature 
-        - oauth_timestamp 
+        - oauth_signature
+        - oauth_timestamp
         - oauth_nonce
         - oauth_version
         ... any additional parameters, as defined by the Service Provider.
     """
+
     parameters = None # OAuth parameters.
     http_method = HTTP_METHOD
     http_url = None
@@ -316,8 +328,11 @@ class OAuthRequest(object):
         return parameters
     _split_url_string = staticmethod(_split_url_string)
 
+
 class OAuthServer(object):
+
     """A worker to check the validity of a request against a data store."""
+
     timestamp_threshold = 300 # In seconds, five minutes.
     version = VERSION
     signature_methods = None
@@ -383,7 +398,7 @@ class OAuthServer(object):
     def get_callback(self, oauth_request):
         """Get the callback URL."""
         return oauth_request.get_parameter('oauth_callback')
- 
+
     def build_authenticate_header(self, realm=''):
         """Optional support for the authenticate header."""
         return {'WWW-Authenticate': 'OAuth realm="%s"' % realm}
@@ -467,7 +482,9 @@ class OAuthServer(object):
 
 
 class OAuthClient(object):
+
     """OAuthClient is a worker to attempt to execute a request."""
+
     consumer = None
     token = None
 
@@ -495,6 +512,7 @@ class OAuthClient(object):
 
 
 class OAuthDataStore(object):
+
     """A database abstraction used to lookup consumers and tokens."""
 
     def lookup_consumer(self, key):
@@ -523,7 +541,9 @@ class OAuthDataStore(object):
 
 
 class OAuthSignatureMethod(object):
+
     """A strategy class that implements a signature method."""
+
     def get_name(self):
         """-> str."""
         raise NotImplementedError
@@ -545,7 +565,7 @@ class OAuthSignatureMethod_HMAC_SHA1(OAuthSignatureMethod):
 
     def get_name(self):
         return 'HMAC-SHA1'
-        
+
     def build_signature_base_string(self, oauth_request, consumer, token):
         sig = (
             escape(oauth_request.get_normalized_http_method()),
