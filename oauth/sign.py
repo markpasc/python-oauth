@@ -40,33 +40,42 @@ class Signer(object):
 
     """
 
-    def get_name(self):
-        """-> str."""
+    def signing_base(self, request, consumer, token):
+        """Calculates the string that needs to be signed.
+
+        This method returns a 2-tuple containing the starting key for the
+        signing and the message to be signed. The latter may be used in error
+        messages to help clients debug their software.
+
+        """
         raise NotImplementedError
 
-    def build_signature_base_string(self, oauth_request, oauth_consumer, oauth_token):
-        """-> str key, str raw."""
+    def sign(self, request, consumer, token):
+        """Returns the signature for the given request, based on the consumer
+        and token also provided.
+
+        You should use your implementation of `signing_base()` to build the
+        message to sign. Otherwise it may be less useful for debugging.
+
+        """
         raise NotImplementedError
 
-    def build_signature(self, oauth_request, oauth_consumer, oauth_token):
-        """-> str."""
-        raise NotImplementedError
-
-    def check_signature(self, oauth_request, consumer, token, signature):
-        built = self.build_signature(oauth_request, consumer, token)
+    def check(self, request, consumer, token, signature):
+        """Returns whether the given signature is the correct signature for
+        the given consumer and token signing the given request."""
+        built = self.sign(request, consumer, token)
         return built == signature
 
 
 class HmacSha1(Signer):
 
-    def get_name(self):
-        return 'HMAC-SHA1'
+    name = 'HMAC-SHA1'
 
-    def build_signature_base_string(self, oauth_request, consumer, token):
+    def signing_base(self, request, consumer, token):
         sig = (
-            escape(oauth_request.method),
-            escape(oauth_request.url),
-            escape(oauth_request.get_normalized_parameters()),
+            escape(request.method),
+            escape(request.url),
+            escape(request.get_normalized_parameters()),
         )
 
         key = '%s&' % escape(consumer.secret)
@@ -75,10 +84,9 @@ class HmacSha1(Signer):
         raw = '&'.join(sig)
         return key, raw
 
-    def build_signature(self, oauth_request, consumer, token):
+    def sign(self, request, consumer, token):
         """Builds the base signature string."""
-        key, raw = self.build_signature_base_string(oauth_request, consumer,
-            token)
+        key, raw = self.signing_base(request, consumer, token)
 
         # HMAC object.
         try:
@@ -94,17 +102,24 @@ class HmacSha1(Signer):
 
 class Plaintext(Signer):
 
-    def get_name(self):
-        return 'PLAINTEXT'
+    """The PLAINTEXT signing method.
 
-    def build_signature_base_string(self, oauth_request, consumer, token):
-        """Concatenates the consumer key and secret."""
+    You should only use this signing method for connections that are already
+    secure. It is trivially vulnerable to man-in-the-middle and replay attacks
+    if a third party can observe the connection.
+
+    """
+
+    name = 'PLAINTEXT'
+
+    def signing_base(self, request, consumer, token):
+        """Concatenates the consumer key and secret with the token's
+        secret."""
         sig = '%s&' % escape(consumer.secret)
         if token:
             sig = sig + escape(token.secret)
         return sig, sig
 
-    def build_signature(self, oauth_request, consumer, token):
-        key, raw = self.build_signature_base_string(oauth_request, consumer,
-            token)
-        return key
+    def sign(self, request, consumer, token):
+        key, raw = self.signing_base(request, consumer, token)
+        return raw

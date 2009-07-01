@@ -265,14 +265,8 @@ class Request(dict):
 
     def sign_request(self, signature_method, consumer, token):
         """Set the signature parameter to the result of build_signature."""
-        # Set the signature method.
-        self['oauth_signature_method'] = signature_method.get_name()
-        # Set the signature.
-        self['oauth_signature'] = self.build_signature(signature_method, consumer, token)
-
-    def build_signature(self, signature_method, consumer, token):
-        """Calls the build signature method within the signature method."""
-        return signature_method.build_signature(self, consumer, token)
+        self['oauth_signature_method'] = signature_method.name
+        self['oauth_signature'] = signature_method.sign(self, consumer, token)
 
     def from_request(cls, http_method, http_url, headers=None, parameters=None,
             query_string=None):
