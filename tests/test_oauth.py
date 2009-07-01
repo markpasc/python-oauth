@@ -64,38 +64,31 @@ class RequestTests(unittest.TestCase):
     def test_empty(self):
         req = oauth.Request()
         self.assertEqual(req.http_method, 'GET')
-        self.assert_(req.http_url is None)
-        self.assertEqual(req.parameters, {})
+        self.assert_(not hasattr(req, 'url'))
 
         self.assertEqual(req.to_postdata(), '')
-        self.assertEqual(req.to_url(), '')
-        self.assertEqual(req.to_header(), {})
+        self.assertRaises(AttributeError, lambda: req.to_url())
+        self.assertEqual(req.to_header(), {'Authorization': 'OAuth realm=""'})
 
     def test_method(self):
         req = oauth.Request('GET')
-        self.assertEqual(req.http_method, 'GET')
-        self.assertEqual(req.get_normalized_http_method(), 'GET')
+        self.assertEqual(req.method, 'GET')
         req = oauth.Request('POST')
-        self.assertEqual(req.http_method, 'POST')
-        self.assertEqual(req.get_normalized_http_method(), 'POST')
+        self.assertEqual(req.method, 'POST')
         req = oauth.Request('AWESOME')
-        self.assertEqual(req.http_method, 'AWESOME')
-        self.assertEqual(req.get_normalized_http_method(), 'AWESOME')
+        self.assertEqual(req.method, 'AWESOME')
 
         req = oauth.Request('get')
-        self.assertEqual(req.http_method, 'get')
-        self.assertEqual(req.get_normalized_http_method(), 'GET')
+        self.assertEqual(req.method, 'GET')
         req = oauth.Request('post')
-        self.assertEqual(req.http_method, 'post')
-        self.assertEqual(req.get_normalized_http_method(), 'POST')
+        self.assertEqual(req.method, 'POST')
         req = oauth.Request('awesome')
-        self.assertEqual(req.http_method, 'awesome')
-        self.assertEqual(req.get_normalized_http_method(), 'AWESOME')
+        self.assertEqual(req.method, 'AWESOME')
 
     def test_sign(self):
         req = oauth.Request('GET', 'http://example.com/')
-        self.assertEqual(req.http_method, 'GET')
-        self.assertEqual(req.http_url, 'http://example.com/')
+        self.assertEqual(req.method, 'GET')
+        self.assertEqual(req.url, 'http://example.com/')
 
         sign = oauth.sign.HmacSha1()
 

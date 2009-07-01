@@ -168,7 +168,7 @@ class Token(object):
         return self.to_string()
 
 
-class Request(object):
+class Request(dict):
 
     """The parameters and information for an HTTP request, suitable for
     authorizing with OAuth credentials.
@@ -180,96 +180,95 @@ class Request(object):
 
     """
 
-    parameters = None # OAuth parameters.
     http_method = HTTP_METHOD
     http_url = None
     version = VERSION
 
-    def __init__(self, http_method=HTTP_METHOD, http_url=None, parameters=None):
-        self.http_method = http_method
-        self.http_url = http_url
-        self.parameters = parameters or {}
+    def __init__(self, method=HTTP_METHOD, url=None, parameters=None):
+        if method is not None:
+            self.method = method
 
-    def set_parameter(self, parameter, value):
-        self.parameters[parameter] = value
+        if url is not None:
+            self.url = url
 
-    def get_parameter(self, parameter):
+        if parameters is not None:
+            self.update(parameters)
+
+    def _get_url(self):
         try:
-            return self.parameters[parameter]
-        except:
-            raise OAuthError('Parameter not found: %s' % parameter)
+            return self.__dict__['url']
+        except KeyError:
+            raise AttributeError('url')
 
-    def _get_timestamp_nonce(self):
-        return self.get_parameter('oauth_timestamp'), self.get_parameter(
-            'oauth_nonce')
-
-    def get_nonoauth_parameters(self):
-        """Get any non-OAuth parameters."""
-        parameters = {}
-        for k, v in self.parameters.iteritems():
-            # Ignore oauth parameters.
-            if k.find('oauth_') < 0:
-                parameters[k] = v
-        return parameters
-
-    def to_header(self, realm=''):
-        """Serialize as a header for an HTTPAuth request."""
-        auth_header = 'OAuth realm="%s"' % realm
-        # Add the oauth parameters.
-        if self.parameters:
-            for k, v in self.parameters.iteritems():
-                if k[:6] == 'oauth_':
-                    auth_header += ', %s="%s"' % (k, escape(str(v)))
-        return {'Authorization': auth_header}
-
-    def to_postdata(self):
-        """Serialize as post data for a POST request."""
-        return '&'.join(['%s=%s' % (escape(str(k)), escape(str(v))) \
-            for k, v in self.parameters.iteritems()])
-
-    def to_url(self):
-        """Serialize as a URL for a GET request."""
-        return '%s?%s' % (self.get_normalized_http_url(), self.to_postdata())
-
-    def get_normalized_parameters(self):
-        """Return a string that contains the parameters that must be signed."""
-        params = self.parameters
-        try:
-            # Exclude the signature if it exists.
-            del params['oauth_signature']
-        except:
-            pass
-        # Escape key values before sorting.
-        key_values = [(escape(_utf8_str(k)), escape(_utf8_str(v))) \
-            for k,v in params.items()]
-        # Sort lexicographically, first after key, then after value.
-        key_values.sort()
-        # Combine key value pairs into a string.
-        return '&'.join(['%s=%s' % (k, v) for k, v in key_values])
-
-    def get_normalized_http_method(self):
-        """Uppercases the http method."""
-        return self.http_method.upper()
-
-    def get_normalized_http_url(self):
-        """Parses the URL and rebuilds it to be scheme://host/path."""
-        parts = urlparse.urlparse(self.http_url)
+    def _set_url(self, value):
+        parts = urlparse.urlparse(value)
         scheme, netloc, path = parts[:3]
         # Exclude default port numbers.
         if scheme == 'http' and netloc[-3:] == ':80':
             netloc = netloc[:-3]
         elif scheme == 'https' and netloc[-4:] == ':443':
             netloc = netloc[:-4]
-        return '%s://%s%s' % (scheme, netloc, path)
+        value = '%s://%s%s' % (scheme, netloc, path)
+        self.__dict__['url'] = value
+
+    def _del_url(self):
+        del self.__dict__['url']
+
+    url = property(_get_url, _set_url, _del_url)
+
+    def _get_method(self):
+        try:
+            return self.__dict__['method']
+        except KeyError:
+            raise AttributeError('method')
+
+    def _set_method(self, value):
+        self.__dict__['method'] = value.upper()
+
+    def _del_method(self):
+        del self.__dict__['method']
+
+    method = property(_get_method, _set_method, _del_method)
+
+    def _get_timestamp_nonce(self):
+        return self['oauth_timestamp'], self['oauth_nonce']
+
+    def get_nonoauth_parameters(self):
+        """Get any non-OAuth parameters."""
+        return dict([(k, v) for k, v in self.iteritems() if not k.startswith('oauth_')])
+
+    def to_header(self, realm=''):
+        """Serialize as a header for an HTTPAuth request."""
+        oauth_params = ((k, v) for k, v in self.iteritems() if k.startswith('oauth_'))
+        stringy_params = ((k, escape(str(v))) for k, v in oauth_params)
+        header_params = ('%s="%s"' % (k, v) for k, v in stringy_params)
+        params_header = ', '.join(header_params)
+
+        auth_header = 'OAuth realm="%s"' % realm
+        if params_header:
+            auth_header += params_header
+
+        return {'Authorization': auth_header}
+
+    def to_postdata(self):
+        """Serialize as post data for a POST request."""
+        return urllib.urlencode(self)
+
+    def to_url(self):
+        """Serialize as a URL for a GET request."""
+        return '%s?%s' % (self.url, self.to_postdata())
+
+    def get_normalized_parameters(self):
+        """Return a string that contains the parameters that must be signed."""
+        items = [(k, v) for k, v in self.items() if k != 'oauth_signature']
+        return urllib.urlencode(sorted(items))
 
     def sign_request(self, signature_method, consumer, token):
         """Set the signature parameter to the result of build_signature."""
         # Set the signature method.
-        self.set_parameter('oauth_signature_method',
-            signature_method.get_name())
+        self['oauth_signature_method'] = signature_method.get_name()
         # Set the signature.
-        self.set_parameter('oauth_signature',
-            self.build_signature(signature_method, consumer, token))
+        self['oauth_signature'] = self.build_signature(signature_method, consumer, token)
 
     def build_signature(self, signature_method, consumer, token):
         """Calls the build signature method within the signature method."""

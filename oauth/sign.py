@@ -64,8 +64,8 @@ class HmacSha1(Signer):
 
     def build_signature_base_string(self, oauth_request, consumer, token):
         sig = (
-            escape(oauth_request.get_normalized_http_method()),
-            escape(oauth_request.get_normalized_http_url()),
+            escape(oauth_request.method),
+            escape(oauth_request.url),
             escape(oauth_request.get_normalized_parameters()),
         )
 
