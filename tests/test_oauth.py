@@ -6,12 +6,25 @@ import oauth.oauth
 class ConsumerTests(unittest.TestCase):
 
     def test_basic(self):
+        self.assertRaises(ValueError, lambda: oauth.oauth.OAuthConsumer(None, None))
+        self.assertRaises(ValueError, lambda: oauth.oauth.OAuthConsumer('asf', None))
+        self.assertRaises(ValueError, lambda: oauth.oauth.OAuthConsumer(None, 'dasf'))
+
         csr = oauth.oauth.OAuthConsumer('asf', 'dasf')
         self.assertEqual(csr.key, 'asf')
         self.assertEqual(csr.secret, 'dasf')
 
 
 class TokenTests(unittest.TestCase):
+
+    def test_basic(self):
+        self.assertRaises(ValueError, lambda: oauth.oauth.OAuthToken(None, None))
+        self.assertRaises(ValueError, lambda: oauth.oauth.OAuthToken('asf', None))
+        self.assertRaises(ValueError, lambda: oauth.oauth.OAuthToken(None, 'dasf'))
+
+        tok = oauth.oauth.OAuthToken('asf', 'dasf')
+        self.assertEqual(tok.key, 'asf')
+        self.assertEqual(tok.secret, 'dasf')
 
     def test_from_string(self):
         self.assertRaises(ValueError, lambda: oauth.oauth.OAuthToken.from_string(''))

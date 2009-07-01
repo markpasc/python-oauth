@@ -73,17 +73,32 @@ def generate_nonce(length=8):
 
 class OAuthConsumer(object):
 
-    """Consumer of OAuth authentication.
+    """A consumer of OAuth-protected services.
 
-    OAuthConsumer is a data type that represents the identity of the Consumer
-    via its shared secret with the Service Provider.
+    The OAuth consumer is a "third-party" service that wants to access
+    protected resources from an OAuth service provider on behalf of an end
+    user. It's kind of the OAuth client.
+
+    Usually a consumer must be registered with the service provider by the
+    developer of the consumer software. As part of that process, the service
+    provider gives the consumer a *key* and a *secret* with which the consumer
+    software can identify itself to the service. The consumer will include its
+    key in each request to identify itself, but will use its secret only when
+    signing requests, to prove that the request is from that particular
+    registered consumer.
+
+    Once registered, the consumer can then use its consumer credentials to ask
+    the service provider for a request token, kicking off the OAuth
+    authorization process.
 
     """
 
-    key = None
-    secret = None
-
     def __init__(self, key, secret):
+        if key is None:
+            raise ValueError("A consumer's key must not be None")
+        if secret is None:
+            raise ValueError("A consumer's secret must not be None")
+
         self.key = key
         self.secret = secret
 
