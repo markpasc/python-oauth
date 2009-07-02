@@ -25,7 +25,9 @@ THE SOFTWARE.
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import urllib
 
-import oauth.oauth as oauth
+import oauth
+import oauth.server
+import oauth.sign
 
 # fake urls for the test server
 REQUEST_TOKEN_URL = 'https://photos.example.net/request_token'
@@ -35,12 +37,12 @@ RESOURCE_URL = 'http://photos.example.net/photos'
 REALM = 'http://photos.example.net/'
 
 # example store for one of each thing
-class MockOAuthDataStore(oauth.OAuthDataStore):
+class MockOAuthDataStore(oauth.server.DataStore):
 
     def __init__(self):
-        self.consumer = oauth.OAuthConsumer('key', 'secret')
-        self.request_token = oauth.OAuthToken('requestkey', 'requestsecret')
-        self.access_token = oauth.OAuthToken('accesskey', 'accesssecret')
+        self.consumer = oauth.Consumer('key', 'secret')
+        self.request_token = oauth.Token('requestkey', 'requestsecret')
+        self.access_token = oauth.Token('accesskey', 'accesssecret')
         self.nonce = 'nonce'
 
     def lookup_consumer(self, key):
@@ -81,9 +83,9 @@ class MockOAuthDataStore(oauth.OAuthDataStore):
 class RequestHandler(BaseHTTPRequestHandler):
 
     def __init__(self, *args, **kwargs):
-        self.oauth_server = oauth.OAuthServer(MockOAuthDataStore())
-        self.oauth_server.add_signature_method(oauth.OAuthSignatureMethod_PLAINTEXT())
-        self.oauth_server.add_signature_method(oauth.OAuthSignatureMethod_HMAC_SHA1())
+        self.oauth_server = oauth.Server(MockOAuthDataStore())
+        self.oauth_server.add_signature_method(oauth.sign.Plaintext())
+        self.oauth_server.add_signature_method(oauth.sign.HmacSha1())
         BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
 
     # example way to send an oauth error
@@ -91,7 +93,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         # send a 401 error
         self.send_error(401, str(err.message))
         # return the authenticate header
-        header = oauth.build_authenticate_header(realm=REALM)
+        header = self.oauth_server.build_authenticate_header(realm=REALM)
         for k, v in header.iteritems():
             self.send_header(k, v) 
 
@@ -110,7 +112,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 pass
 
         # construct the oauth request from the request parameters
-        oauth_request = oauth.OAuthRequest.from_request(self.command, self.path, headers=self.headers, query_string=postdata)
+        oauth_request = oauth.Request.from_request(self.command, self.path, headers=self.headers, query_string=postdata)
 
         # request token
         if self.path.startswith(REQUEST_TOKEN_URL):

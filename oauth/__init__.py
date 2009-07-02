@@ -43,11 +43,6 @@ class OAuthError(RuntimeError):
         self.message = message
 
 
-def build_authenticate_header(realm=''):
-    """Optional WWW-Authenticate header (401 error)"""
-    return {'WWW-Authenticate': 'OAuth realm="%s"' % realm}
-
-
 def escape(s):
     """Escape a URL including any /."""
     return urllib.quote(s, safe='~')
@@ -69,9 +64,6 @@ def generate_timestamp():
 def generate_nonce(length=8):
     """Generate pseudorandom number."""
     return ''.join([str(random.randint(0, 9)) for i in range(length)])
-
-
-from oauth.sign import *
 
 
 class Consumer(object):
