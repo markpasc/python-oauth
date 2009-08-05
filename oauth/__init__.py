@@ -58,16 +58,6 @@ def _utf8_str(s):
         return str(s)
 
 
-def generate_timestamp():
-    """Get seconds since epoch (UTC)."""
-    return int(time.time())
-
-
-def generate_nonce(length=8):
-    """Generate pseudorandom number."""
-    return ''.join([str(random.randint(0, 9)) for i in range(length)])
-
-
 class Consumer(object):
 
     """A consumer of OAuth-protected services.
@@ -257,6 +247,16 @@ class Request(dict):
         self['oauth_signature_method'] = signature_method.name
         self['oauth_signature'] = signature_method.sign(self, consumer, token)
 
+    def make_timestamp(cls):
+        """Get seconds since epoch (UTC)."""
+        return int(time.time())
+    make_timestamp = classmethod(make_timestamp)
+
+    def make_nonce(cls, length=8):
+        """Generate pseudorandom number."""
+        return ''.join([str(random.randint(0, 9)) for i in range(length)])
+    make_nonce = classmethod(make_nonce)
+
     def from_request(cls, http_method, http_url, headers=None, parameters=None,
             query_string=None):
         """Combines multiple parameter sources."""
@@ -300,8 +300,8 @@ class Request(dict):
 
         defaults = {
             'oauth_consumer_key': oauth_consumer.key,
-            'oauth_timestamp': generate_timestamp(),
-            'oauth_nonce': generate_nonce(),
+            'oauth_timestamp': cls.make_timestamp(),
+            'oauth_nonce': cls.make_nonce(),
             'oauth_version': cls.version,
         }
 
