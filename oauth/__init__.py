@@ -249,7 +249,7 @@ class Request(dict):
 
     def make_timestamp(cls):
         """Get seconds since epoch (UTC)."""
-        return int(time.time())
+        return str(int(time.time()))
     make_timestamp = classmethod(make_timestamp)
 
     def make_nonce(cls):
