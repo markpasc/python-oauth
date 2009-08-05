@@ -162,6 +162,21 @@ class Token(object):
         return self.to_string()
 
 
+def setter(setter):
+    name = setter.__name__
+
+    def getter(self):
+        try:
+            return self.__dict__[name]
+        except KeyError:
+            raise AttributeError(name)
+
+    def deleter(self):
+        del self.__dict__[name]
+
+    return property(getter, setter, deleter)
+
+
 class Request(dict):
 
     """The parameters and information for an HTTP request, suitable for
@@ -188,13 +203,8 @@ class Request(dict):
         if parameters is not None:
             self.update(parameters)
 
-    def _get_url(self):
-        try:
-            return self.__dict__['url']
-        except KeyError:
-            raise AttributeError('url')
-
-    def _set_url(self, value):
+    @setter
+    def url(self, value):
         parts = urlparse.urlparse(value)
         scheme, netloc, path = parts[:3]
         # Exclude default port numbers.
@@ -205,24 +215,9 @@ class Request(dict):
         value = '%s://%s%s' % (scheme, netloc, path)
         self.__dict__['url'] = value
 
-    def _del_url(self):
-        del self.__dict__['url']
-
-    url = property(_get_url, _set_url, _del_url)
-
-    def _get_method(self):
-        try:
-            return self.__dict__['method']
-        except KeyError:
-            raise AttributeError('method')
-
-    def _set_method(self, value):
+    @setter
+    def method(self, value):
         self.__dict__['method'] = value.upper()
-
-    def _del_method(self):
-        del self.__dict__['method']
-
-    method = property(_get_method, _set_method, _del_method)
 
     def _get_timestamp_nonce(self):
         return self['oauth_timestamp'], self['oauth_nonce']
