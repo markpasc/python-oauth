@@ -63,71 +63,71 @@ class Server(object):
         self.signature_methods[signature_method.get_name()] = signature_method
         return self.signature_methods
 
-    def fetch_request_token(self, oauth_request):
+    def fetch_request_token(self, request):
         """Processes a request_token request and returns the
         request token on success.
         """
         try:
             # Get the request token for authorization.
-            token = self._get_token(oauth_request, 'request')
+            token = self._get_token(request, 'request')
         except OAuthError:
             # No token required for the initial token request.
-            version = self._get_version(oauth_request)
-            consumer = self._get_consumer(oauth_request)
-            self._check_signature(oauth_request, consumer, None)
+            version = self._get_version(request)
+            consumer = self._get_consumer(request)
+            self._check_signature(request, consumer, None)
             # Fetch a new token.
             token = self.data_store.fetch_request_token(consumer)
         return token
 
-    def fetch_access_token(self, oauth_request):
+    def fetch_access_token(self, request):
         """Processes an access_token request and returns the
         access token on success.
         """
-        version = self._get_version(oauth_request)
-        consumer = self._get_consumer(oauth_request)
+        version = self._get_version(request)
+        consumer = self._get_consumer(request)
         # Get the request token.
-        token = self._get_token(oauth_request, 'request')
-        self._check_signature(oauth_request, consumer, token)
+        token = self._get_token(request, 'request')
+        self._check_signature(request, consumer, token)
         new_token = self.data_store.fetch_access_token(consumer, token)
         return new_token
 
-    def verify_request(self, oauth_request):
+    def verify_request(self, request):
         """Verifies an api call and checks all the parameters."""
         # -> consumer and token
-        version = self._get_version(oauth_request)
-        consumer = self._get_consumer(oauth_request)
+        version = self._get_version(request)
+        consumer = self._get_consumer(request)
         # Get the access token.
-        token = self._get_token(oauth_request, 'access')
-        self._check_signature(oauth_request, consumer, token)
-        parameters = oauth_request.get_nonoauth_parameters()
+        token = self._get_token(request, 'access')
+        self._check_signature(request, consumer, token)
+        parameters = request.get_nonoauth_parameters()
         return consumer, token, parameters
 
     def authorize_token(self, token, user):
         """Authorize a request token."""
         return self.data_store.authorize_request_token(token, user)
 
-    def get_callback(self, oauth_request):
+    def get_callback(self, request):
         """Get the callback URL."""
-        return oauth_request.get_parameter('oauth_callback')
+        return request.get_parameter('oauth_callback')
 
     def build_authenticate_header(self, realm=''):
         """Optional support for the authenticate header."""
         return {'WWW-Authenticate': 'OAuth realm="%s"' % realm}
 
-    def _get_version(self, oauth_request):
+    def _get_version(self, request):
         """Verify the correct version request for this server."""
         try:
-            version = oauth_request.get_parameter('oauth_version')
+            version = request.get_parameter('oauth_version')
         except:
             version = VERSION
         if version and version != self.version:
             raise OAuthError('OAuth version %s not supported.' % str(version))
         return version
 
-    def _get_signature_method(self, oauth_request):
+    def _get_signature_method(self, request):
         """Figure out the signature with some defaults."""
         try:
-            signature_method = oauth_request.get_parameter(
+            signature_method = request.get_parameter(
                 'oauth_signature_method')
         except:
             signature_method = SIGNATURE_METHOD
@@ -141,39 +141,39 @@ class Server(object):
 
         return signature_method
 
-    def _get_consumer(self, oauth_request):
-        consumer_key = oauth_request.get_parameter('oauth_consumer_key')
+    def _get_consumer(self, request):
+        consumer_key = request.get_parameter('oauth_consumer_key')
         consumer = self.data_store.lookup_consumer(consumer_key)
         if not consumer:
             raise OAuthError('Invalid consumer.')
         return consumer
 
-    def _get_token(self, oauth_request, token_type='access'):
+    def _get_token(self, request, token_type='access'):
         """Try to find the token for the provided request token key."""
-        token_field = oauth_request.get_parameter('oauth_token')
+        token_field = request.get_parameter('oauth_token')
         token = self.data_store.lookup_token(token_type, token_field)
         if not token:
             raise OAuthError('Invalid %s token: %s' % (token_type, token_field))
         return token
 
-    def _check_signature(self, oauth_request, consumer, token):
-        timestamp, nonce = oauth_request._get_timestamp_nonce()
+    def _check_signature(self, request, consumer, token):
+        timestamp, nonce = request._get_timestamp_nonce()
         self._check_timestamp(timestamp)
         self._check_nonce(consumer, token, nonce)
-        signature_method = self._get_signature_method(oauth_request)
+        signature_method = self._get_signature_method(request)
         try:
-            signature = oauth_request.get_parameter('oauth_signature')
+            signature = request.get_parameter('oauth_signature')
         except:
             raise OAuthError('Missing signature.')
         # Validate the signature.
-        valid_sig = signature_method.check_signature(oauth_request, consumer,
+        valid_sig = signature_method.check_signature(request, consumer,
             token, signature)
         if not valid_sig:
             key, base = signature_method.build_signature_base_string(
-                oauth_request, consumer, token)
+                request, consumer, token)
             raise OAuthError('Invalid signature. Expected signature base '
                 'string: %s' % base)
-        built = signature_method.build_signature(oauth_request, consumer, token)
+        built = signature_method.build_signature(request, consumer, token)
 
     def _check_timestamp(self, timestamp):
         """Verify that timestamp is recentish."""
