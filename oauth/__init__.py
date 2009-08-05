@@ -31,6 +31,8 @@ import urlparse
 import hmac
 import binascii
 
+from oauth import sign
+
 
 VERSION = '1.0' # Hi Blaine!
 HTTP_METHOD = 'GET'

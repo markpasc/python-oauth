@@ -29,6 +29,11 @@ import binascii
 from oauth import *
 
 
+def escape(s):
+    """Escape a URL including any /."""
+    return urllib.quote(s, safe='~')
+
+
 class Signer(object):
 
     """A way of signing requests.
