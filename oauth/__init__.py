@@ -252,9 +252,9 @@ class Request(dict):
         return int(time.time())
     make_timestamp = classmethod(make_timestamp)
 
-    def make_nonce(cls, length=8):
+    def make_nonce(cls):
         """Generate pseudorandom number."""
-        return ''.join([str(random.randint(0, 9)) for i in range(length)])
+        return str(random.randint(0, 100000000))
     make_nonce = classmethod(make_nonce)
 
     def from_request(cls, http_method, http_url, headers=None, parameters=None,
